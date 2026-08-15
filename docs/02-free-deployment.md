@@ -6,29 +6,40 @@ any static host can serve it. The build is well under 1 MB.
 
 ## GitHub Pages (what this repo is set up for)
 
-`.github/workflows/deploy.yml` typechecks, tests, builds and publishes on every push
-to `main`.
+Deployment is branch-based: the built site lives on the `gh-pages` branch and GitHub
+serves it directly. No CI involved.
 
 One-time setup in the repository:
 
-1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
-2. Push to `main` (or run the workflow manually from the Actions tab).
+1. **Settings → Pages → Build and deployment → Source: Deploy from a branch.**
+2. Branch **`gh-pages`**, folder **`/ (root)`**, then Save.
 
-The site is then served at `https://<owner>.github.io/<repo>/`.
+To publish, at any time:
+
+```bash
+npm run deploy
+```
+
+That builds with the right base path, replaces the contents of `gh-pages`, and
+pushes. `scripts/deploy-pages.mjs` does the work through a git worktree, so your
+working tree is never touched.
+
+The site is served at `https://<owner>.github.io/<repo>/`.
 
 ### The base path
 
 A GitHub Pages *project* site is served from `/<repo>`, not the domain root. The
-workflow sets `NEXT_PUBLIC_BASE_PATH` to `/<repo>` at build time, which feeds
-`basePath` and `assetPrefix` in `next.config.mjs`. Without it every asset would 404.
+deploy script sets `NEXT_PUBLIC_BASE_PATH` to `/<repo>` at build time (reading the
+name from the git remote), which feeds `basePath` and `assetPrefix` in
+`next.config.mjs`. Without it every asset would 404.
 
 Share links must respect it too. `lib/basePath.ts` exposes `appUrl()`, and all
 generated links go through it — `window.location.origin` on its own would produce
 `https://owner.github.io/fill/` instead of `https://owner.github.io/<repo>/fill/`.
 
-`public/.nojekyll` stops GitHub treating `_next/` as a Jekyll internal directory.
-The Actions-based deploy does not run Jekyll, but the file also protects the older
-branch-based publishing method.
+`public/.nojekyll` is **required** here. Branch-based Pages deploys run Jekyll, which
+ignores directories beginning with an underscore, and would silently drop the whole
+`_next/` bundle. The deploy script fails loudly if the file is missing from a build.
 
 Limits on the free plan: 1 GB site size, a soft 100 GB/month bandwidth limit, and a
 soft 10 builds/hour limit. Free-plan Pages sites are public.
