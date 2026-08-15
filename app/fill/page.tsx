@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Check, Copy, Link2Off, MousePointerClick } from "lucide-react";
 import { AvailabilityGrid } from "@/components/grid/AvailabilityGrid";
 import { Button } from "@/components/ui/Button";
+import { appUrl } from "@/lib/basePath";
 import { parseSlotKey } from "@/lib/grid";
 import { decodeFillSession, encodeFillResponse } from "@/lib/session";
 import { orderedWeek } from "@/lib/scheduling/time";
@@ -40,7 +41,7 @@ function FillContent() {
     }
 
     setResponseUrl(
-      `${window.location.origin}/?add=${encodeFillResponse({
+      `${appUrl("/")}?add=${encodeFillResponse({
         name: name.trim(),
         slots: slotsByDay
       })}`

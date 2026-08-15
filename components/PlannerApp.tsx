@@ -31,6 +31,7 @@ import type {
   StoreSettings,
   WorkspaceDraft
 } from "@/lib/scheduling/types";
+import { appUrl } from "@/lib/basePath";
 import { decodeFillResponse, encodeFillSession } from "@/lib/session";
 import { slotSetToWindows } from "@/lib/grid";
 import { emptyWorkspace, normalizeWorkspace, STORAGE_KEY } from "@/lib/workspace";
@@ -497,7 +498,7 @@ function SharePanel({
 
   function generate() {
     setLink(
-      `${window.location.origin}/fill?s=${encodeFillSession({
+      `${appUrl("/fill/")}?s=${encodeFillSession({
         title,
         days: selectedDays,
         startHour,

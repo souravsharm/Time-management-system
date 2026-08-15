@@ -1,15 +1,56 @@
-# Free Deployment Notes
+# Deployment
 
-The project is configured with `output: "export"` in `next.config.mjs`, so `npm run build` produces a static site in `out/`.
+`next.config.mjs` sets `output: "export"`, so `npm run build` produces a static site
+in `out/`. There is no server, no API route and no runtime environment variable, so
+any static host can serve it. The build is well under 1 MB.
 
-Recommended non-Vercel targets, checked against official docs on 2026-06-16:
+## GitHub Pages (what this repo is set up for)
 
-- Netlify: Free plan is listed at $0 with a monthly credit limit. Build command: `npm run build`. Publish directory: `out`. Source: https://www.netlify.com/pricing/
-- Cloudflare Pages: Free plan lists 500 builds per month. Build command: `npm run build`. Output directory: `out`. Source: https://developers.cloudflare.com/pages/platform/limits/
-- GitHub Pages: available for public repositories on GitHub Free and serves static HTML, CSS, and JavaScript. Best fit if deploying to an owner root site; project sites usually need a Next.js `basePath`/asset prefix for the repository subpath. Source: https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages
-- Render Static Sites: Hobby is listed at $0/month and the plan comparison includes Static Sites. Build command: `npm run build`. Publish directory: `out`. Source: https://render.com/pricing
+`.github/workflows/deploy.yml` typechecks, tests, builds and publishes on every push
+to `main`.
 
-For this MVP, avoid platforms that require a continuously running server unless you are adding server-side Supabase code. The current app runs fully in the browser.
+One-time setup in the repository:
+
+1. **Settings → Pages → Build and deployment → Source: GitHub Actions.**
+2. Push to `main` (or run the workflow manually from the Actions tab).
+
+The site is then served at `https://<owner>.github.io/<repo>/`.
+
+### The base path
+
+A GitHub Pages *project* site is served from `/<repo>`, not the domain root. The
+workflow sets `NEXT_PUBLIC_BASE_PATH` to `/<repo>` at build time, which feeds
+`basePath` and `assetPrefix` in `next.config.mjs`. Without it every asset would 404.
+
+Share links must respect it too. `lib/basePath.ts` exposes `appUrl()`, and all
+generated links go through it — `window.location.origin` on its own would produce
+`https://owner.github.io/fill/` instead of `https://owner.github.io/<repo>/fill/`.
+
+`public/.nojekyll` stops GitHub treating `_next/` as a Jekyll internal directory.
+The Actions-based deploy does not run Jekyll, but the file also protects the older
+branch-based publishing method.
+
+Limits on the free plan: 1 GB site size, a soft 100 GB/month bandwidth limit, and a
+soft 10 builds/hour limit. Free-plan Pages sites are public.
+Source: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits
+
+## Other free static hosts
+
+To deploy anywhere served from a domain root, build **without**
+`NEXT_PUBLIC_BASE_PATH` and publish `out/`.
+
+- **Cloudflare Pages** — build `npm run build`, output directory `out`. Static asset
+  requests are free and unlimited; the free plan allows 500 builds/month, 20,000
+  files and 25 MiB per file.
+  Sources: https://developers.cloudflare.com/pages/platform/limits/ and
+  https://developers.cloudflare.com/pages/functions/pricing/
+- **Netlify** — now credit-based: 300 credits/month on the free plan with a hard cap,
+  where bandwidth costs 20 credits/GB and each production deploy costs 15 credits.
+  Sites pause when the credits run out, so it suits a finished site more than one
+  under active development. Source: https://www.netlify.com/pricing/
+
+Avoid hosts that require a continuously running server unless server-side code is
+added later.
 
 ## Supabase phase
 
@@ -23,6 +64,9 @@ Supabase can still be used on free infrastructure:
 
 Do not expose `SUPABASE_SERVICE_ROLE_KEY` in the browser.
 
+Note that adding Next.js route handlers would end the static export, and the app
+would then need a host that supports Next.js server functions.
+
 ## Build checklist
 
 ```bash
@@ -31,5 +75,3 @@ npm run test
 npm run typecheck
 npm run build
 ```
-
-The static export does not use Next.js route handlers. If you later add API routes, switch to a host that supports Next.js server functions, such as Netlify or Render Web Services.

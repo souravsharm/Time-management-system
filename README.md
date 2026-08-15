@@ -116,8 +116,18 @@ breaking.
 ## Deployment
 
 `next.config.mjs` sets `output: "export"`, so `npm run build` produces a static site
-in `out/` that can be hosted on any static host. See
-[docs/02-free-deployment.md](docs/02-free-deployment.md).
+in `out/`. No server, no API routes, no runtime environment variables.
+
+This repo deploys to **GitHub Pages** via `.github/workflows/deploy.yml`, which
+typechecks, tests, builds and publishes on every push to `main`. Enable it once under
+**Settings → Pages → Source: GitHub Actions**.
+
+Because a project site is served from `/<repo>` rather than the domain root, the
+workflow sets `NEXT_PUBLIC_BASE_PATH`, which drives `basePath`/`assetPrefix` and the
+`appUrl()` helper in `lib/basePath.ts` that share links are built with. To host at a
+domain root instead, build without that variable and publish `out/`.
+
+See [docs/02-free-deployment.md](docs/02-free-deployment.md) for other free hosts.
 
 ## Licence
 
